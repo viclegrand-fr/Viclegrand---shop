@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Finalisez votre achat de logiciels sécurisés avec carte bancaire, PayPal ou carte cadeau.">
+    <meta name="keywords" content="paiement sécurisé, carte bancaire, PayPal, carte cadeau, logiciels">
+    <title>Boutique de Logiciels - Panier</title>
+    <script src="https://js.stripe.com/v3/"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1>Votre Panier</h1>
+        <nav>
+            <ul>
+                <li><a href="index.html">Accueil</a></li>
+                <li><a href="produits.html">Produits</a></li>
+                <li><a href="contact.html">Contact</a></li>
+                <li><a href="panier.html">Panier (<span id="cart-count">0</span>)</a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <section id="cart">
+            <h2>Votre Panier</h2>
+            <ul id="cart-items"></ul>
+            <p>Total : <span id="cart-total">0,00 €</span></p>
+            <div class="gift-card">
+                <label for="gift-code">Code de carte cadeau :</label>
+                <input type="text" id="gift-code" placeholder="Entrez votre code">
+                <button onclick="appliquerCarteCadeau()">Appliquer</button>
+            </div>
+            <button onclick="payerAvecStripe()">Payer par carte bancaire ou PayPal</button>
+            <p id="payment-status"></p>
+        </section>
+    </main>
+    <script src="script.js"></script>
+</body>
+</html>

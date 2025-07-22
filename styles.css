@@ -1,0 +1,111 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f4;
+}
+header {
+    background-color: #333;
+    color: white;
+    text-align: center;
+    padding: 1em;
+}
+nav ul {
+    list-style: none;
+    padding: 0;
+}
+nav ul li {
+    display: inline;
+    margin: 0 1em;
+}
+nav ul li a {
+    color: white;
+    text-decoration: none;
+}
+main {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 20px;
+}
+.produit {
+    background-color: white;
+    padding: 15px;
+    margin-bottom: 15px;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+.produit img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 5px;
+}
+.produit h3 {
+    margin: 0 0 10px;
+}
+button, .cta-button {
+    padding: 10px 20px;
+    background-color: #333;
+    color: white;
+    border: none;
+    cursor: pointer;
+    border-radius: 5px;
+    text-decoration: none;
+    display: inline-block;
+}
+button:hover, .cta-button:hover {
+    background-color: #555;
+}
+form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+input, textarea {
+    padding: 10px;
+    font-size: 1em;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+}
+#cart-items {
+    list-style: none;
+    padding: 0;
+}
+#cart-items li {
+    padding: 10px;
+    background-color: #f9f9f9;
+    margin-bottom: 10px;
+    border-radius: 5px;
+}
+.gift-card {
+    margin: 20px 0;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+.gift-card input {
+    padding: 10px;
+    font-size: 1em;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    width: 200px;
+}
+#payment-status {
+    color: green;
+    font-weight: bold;
+}
+@media (max-width: 600px) {
+    nav ul li {
+        display: block;
+        margin: 10px 0;
+    }
+    .produit {
+        padding: 10px;
+    }
+    .gift-card {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .gift-card input {
+        width: 100%;
+    }
+}

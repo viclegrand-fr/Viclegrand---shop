@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Découvrez nos logiciels performants pour tous vos besoins.">
+    <title>Viclegrandshop - Produits</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1>Nos Logiciels</h1>
+        <nav>
+            <ul>
+                <li><a href="index.html">Accueil</a></li>
+                <li><a href="produits.html">Produits</a></li>
+                <li><a href="contact.html">Contact</a></li>
+                <li><a href="panier.html">Panier (<span id="cart-count">0</span>)</a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <section id="produits">
+            <h2>Nos Logiciels</h2>
+            <div class="produit">
+                <h3>optimisation 1</h3>
+                <img src="images/screenshot1.jpg" alt="optimisation 1">
+                <p>Un outil puissant pour optimiser votre ordinateur</p>
+                <p>Prix : 2,99 €</p>
+                <button onclick="ajouterAuPanier('optimisation 1', 2,99)">Ajouter au panier</button>
+                <button onclick="window.location.href='demo.html'">Essayer la démo</button>
+            </div>
+            <div class="produit">
+                <h3>Logiciel de Sécurité</h3>
+                <img src="images/screenshot2.jpg" alt="Logiciel de Sécurité">
+                <p>Protégez vos données avec notre solution de sécurité avancée.</p>
+                <p>Prix : 29,99 €</p>
+                <button onclick="ajouterAuPanier('Logiciel de Sécurité', 29.99)">Ajouter au panier</button>
+                <button onclick="window.location.href='demo.html'">Essayer la démo</button>
+            </div>
+        </section>
+    </main>
+    <script src="script.js" defer></script>
+</body>
+</html>
