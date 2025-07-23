@@ -100,7 +100,10 @@ function appliquerCarteCadeau() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ code })
         })
-        .then(response => response.json())
+        .then(response => {
+            console.log('Réponse fetch valider-carte-cadeau :', response.status);
+            return response.json();
+        })
         .then(data => {
             if (data.valid && total >= data.value) {
                 total -= data.value;
@@ -113,7 +116,7 @@ function appliquerCarteCadeau() {
         })
         .catch(error => {
             console.error('Erreur lors de la requête fetch pour carte cadeau :', error);
-            status.textContent = 'Erreur lors de la validation de la carte cadeau.';
+            status.textContent = 'Erreur lors de la validation de la carte cadeau : ' + error.message;
         });
     } catch (error) {
         console.error('Erreur dans appliquerCarteCadeau :', error);
@@ -122,43 +125,63 @@ function appliquerCarteCadeau() {
 
 // Payer avec Stripe (carte bancaire ou PayPal)
 function payerAvecStripe() {
-    console.log('Appel de payerAvecStripe');
+    console.log('Appel de payerAvecStripe avec panier :', panier, 'et total :', total);
     try {
         const status = document.getElementById('payment-status');
+        if (!status) {
+            throw new Error('Élément payment-status non trouvé');
+        }
         if (total <= 0) {
             status.textContent = 'Aucun montant à payer.';
             return;
         }
-        const email = prompt('Entrez votre email pour la clé de licence :');
-        if (!email) {
-            status.textContent = 'Email requis pour le paiement.';
+        if (!panier || panier.length === 0) {
+            status.textContent = 'Le panier est vide.';
             return;
         }
+        const email = prompt('Entrez votre email pour la clé de licence :');
+        if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            status.textContent = 'Email invalide.';
+            return;
+        }
+        console.log('Envoi de la requête de paiement avec :', { amount: total * 100, currency: 'eur', items: panier, email });
         fetch('http://localhost:3000/creer-paiement', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                amount: total * 100,
+                amount: Math.round(total * 100),
                 currency: 'eur',
                 items: panier,
                 email: email
             })
         })
-        .then(response => response.json())
+        .then(response => {
+            console.log('Réponse fetch creer-paiement :', response.status);
+            if (!response.ok) {
+                throw new Error(`Erreur HTTP : ${response.status}`);
+            }
+            return response.json();
+        })
         .then(session => {
+            console.log('Session Stripe reçue :', session);
             return stripe.redirectToCheckout({ sessionId: session.id });
         })
         .then(result => {
             if (result.error) {
+                console.error('Erreur Stripe redirectToCheckout :', result.error);
                 status.textContent = result.error.message;
             }
         })
         .catch(error => {
             console.error('Erreur lors du paiement Stripe :', error);
-            status.textContent = 'Erreur lors du paiement.';
+            status.textContent = 'Erreur lors du paiement : ' + error.message;
         });
     } catch (error) {
         console.error('Erreur dans payerAvecStripe :', error);
+        const status = document.getElementById('payment-status');
+        if (status) {
+            status.textContent = 'Erreur lors du paiement : ' + error.message;
+        }
     }
 }
 
