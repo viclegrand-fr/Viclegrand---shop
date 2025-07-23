@@ -2,6 +2,9 @@
 let panier = [];
 let total = 0;
 
+// URL de l’API
+const API_URL = window.location.hostname === 'localhost' ? 'http://localhost:3000' : 'https://viclegrand-shop-server.vercel.app'; // Remplace par ton URL Vercel
+
 // Initialiser Stripe avec la clé publique
 const stripe = Stripe('pk_test_51RndxD4FrXK4aJqgKie5XyDJfd03LaB8FygHVJU2qnYSrPQXlESnG6kihjbBsQxTH2AhHQzbLka8AO3EBEKCU15h00PI3DW6Pi');
 
@@ -86,7 +89,7 @@ function ajouterAuPanier(nom, prix) {
 }
 
 // Appliquer une carte cadeau
-function appliquerCarteCadeau() {
+async function appliquerCarteCadeau() {
     console.log('Appel de appliquerCarteCadeau');
     try {
         const code = document.getElementById('gift-code').value.toUpperCase();
@@ -95,41 +98,37 @@ function appliquerCarteCadeau() {
             status.textContent = 'Veuillez entrer un code de carte cadeau.';
             return;
         }
-        fetch('http://localhost:3000/valider-carte-cadeau', {
+        const response = await fetch(`${API_URL}/valider-carte-cadeau`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ code })
-        })
-        .then(response => {
-            console.log('Réponse fetch valider-carte-cadeau :', response.status);
-            if (!response.ok) {
-                throw new Error(`Erreur HTTP : ${response.status}`);
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (data.valid && total >= data.value) {
-                total -= data.value;
-                status.textContent = `Carte cadeau de ${data.value} € appliquée !`;
-                mettreAJourPanier();
-                localStorage.setItem('panier', JSON.stringify(panier));
-            } else {
-                status.textContent = data.valid ? 'Le total est inférieur à la valeur de la carte.' : 'Code invalide.';
-            }
-        })
-        .catch(error => {
-            console.error('Erreur lors de la requête fetch pour carte cadeau :', error);
-            status.textContent = 'Erreur lors de la validation de la carte cadeau : ' + error.message;
         });
+        console.log('Réponse fetch valider-carte-cadeau :', response.status);
+        if (!response.ok) {
+            throw new Error(`Erreur HTTP : ${response.status} - ${await response.text()}`);
+        }
+        const data = await response.json();
+        if (data.valid && total >= data.value) {
+            total -= data.value;
+            status.textContent = `Carte cadeau de ${data.value} € appliquée !`;
+            mettreAJourPanier();
+            localStorage.setItem('panier', JSON.stringify(panier));
+        } else {
+            status.textContent = data.valid ? 'Le total est inférieur à la valeur de la carte.' : 'Code invalide.';
+        }
     } catch (error) {
-        console.error('Erreur dans appliquerCarteCadeau :', error);
+        console.error('Erreur lors de la requête fetch pour carte cadeau :', error);
+        const status = document.getElementById('payment-status');
+        if (status) {
+            status.textContent = `Erreur lors de la validation de la carte cadeau : ${error.message}`;
+        }
     }
 }
 
 // Vérifier la disponibilité du serveur
 async function verifierServeur() {
     try {
-        const response = await fetch('http://localhost:3000/ping', {
+        const response = await fetch(`${API_URL}/ping`, {
             method: 'GET',
             headers: { 'Content-Type': 'application/json' }
         });
@@ -166,13 +165,13 @@ async function payerAvecStripe() {
         // Vérifier si le serveur est accessible
         const serveurDisponible = await verifierServeur();
         if (!serveurDisponible) {
-            status.textContent = 'Erreur : le serveur de paiement n’est pas accessible.';
-            console.error('Le serveur Node.js ne répond pas sur http://localhost:3000');
+            status.textContent = `Erreur : le serveur de paiement (${API_URL}) n’est pas accessible.`;
+            console.error(`Le serveur à ${API_URL} ne répond pas`);
             return;
         }
 
         console.log('Envoi de la requête de paiement avec :', { amount: total * 100, currency: 'eur', items: panier, email });
-        const response = await fetch('http://localhost:3000/creer-paiement', {
+        const response = await fetch(`${API_URL}/creer-paiement`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -186,7 +185,7 @@ async function payerAvecStripe() {
         console.log('Réponse fetch creer-paiement :', response.status);
         if (!response.ok) {
             const errorData = await response.json();
-            throw new Error(`Erreur HTTP : ${response.status} - ${errorData.error || 'Erreur inconnue'}`);
+            throw new Error(`Erreur HTTP : ${response.status} - ${errorData.error || await response.text()}`);
         }
 
         const session = await response.json();
@@ -200,7 +199,7 @@ async function payerAvecStripe() {
         console.error('Erreur dans payerAvecStripe :', error);
         const status = document.getElementById('payment-status');
         if (status) {
-            status.textContent = 'Erreur lors du paiement : ' + error.message;
+            status.textContent = `Erreur lors du paiement : ${error.message}`;
         }
     }
 }
