@@ -6,11 +6,17 @@ const app = express();
 app.use(express.json());
 
 // Activer CORS pour les requêtes fetch depuis localhost:8000
-app.use((req, res, next) => {
-    res.header('Access-Control-Allow-Origin', 'http://localhost:8000');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type');
-    next();
+const cors = require('cors');
+app.use(cors({
+    origin: 'http://localhost:8000',
+    methods: ['GET', 'POST', 'OPTIONS'],
+    allowedHeaders: ['Content-Type']
+}));
+
+// Route de test pour vérifier la disponibilité du serveur
+app.get('/ping', (req, res) => {
+    console.log('Requête ping reçue');
+    res.json({ status: 'Serveur en ligne' });
 });
 
 // Liste de cartes cadeaux (simulée)
