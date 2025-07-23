@@ -5,6 +5,14 @@ sgMail.setApiKey('SG.ton_clé_api_sendgrid'); // Remplace par ta clé API SendGr
 const app = express();
 app.use(express.json());
 
+// Activer CORS pour les requêtes fetch depuis localhost:8000
+app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', 'http://localhost:8000');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type');
+    next();
+});
+
 // Liste de cartes cadeaux (simulée)
 const cartesCadeaux = {
     'CADEAU100': 100,
@@ -14,24 +22,48 @@ const cartesCadeaux = {
 
 // Valider une carte cadeau
 app.post('/valider-carte-cadeau', (req, res) => {
+    console.log('Requête valider-carte-cadeau reçue :', req.body);
     const { code } = req.body;
-    res.json({ valid: !!cartesCadeaux[code], value: cartesCadeaux[code] || 0 });
+    try {
+        if (!code) {
+            throw new Error('Code de carte cadeau manquant');
+        }
+        res.json({ valid: !!cartesCadeaux[code], value: cartesCadeaux[code] || 0 });
+    } catch (error) {
+        console.error('Erreur dans valider-carte-cadeau :', error);
+        res.status(400).json({ error: error.message });
+    }
 });
 
 // Créer une session de paiement Stripe
 app.post('/creer-paiement', async (req, res) => {
+    console.log('Requête creer-paiement reçue :', req.body);
     const { amount, currency, items, email } = req.body;
     try {
+        if (!amount || amount <= 0) {
+            throw new Error('Montant invalide');
+        }
+        if (!items || !Array.isArray(items) || items.length === 0) {
+            throw new Error('Liste des articles invalide');
+        }
+        if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            throw new Error('Email invalide');
+        }
         const session = await Stripe.checkout.sessions.create({
             payment_method_types: ['card', 'paypal'],
-            line_items: items.map(item => ({
-                price_data: {
-                    currency: currency,
-                    product_data: { name: item.nom },
-                    unit_amount: Math.round(item.prix * 100)
-                },
-                quantity: 1
-            })),
+            line_items: items.map(item => {
+                if (!item.nom || !item.prix || item.prix <= 0) {
+                    throw new Error(`Article invalide : ${JSON.stringify(item)}`);
+                }
+                return {
+                    price_data: {
+                        currency: currency,
+                        product_data: { name: item.nom },
+                        unit_amount: Math.round(item.prix * 100)
+                    },
+                    quantity: 1
+                };
+            }),
             mode: 'payment',
             success_url: 'http://localhost:8000/panier.html?success=true',
             cancel_url: 'http://localhost:8000/panier.html?cancel=true',
@@ -50,9 +82,11 @@ app.post('/creer-paiement', async (req, res) => {
             html: `<p>Merci pour votre achat ! Votre clé de licence est : <strong>${session.metadata.license_key}</strong></p>`
         };
         await sgMail.send(msg);
+        console.log('Email envoyé avec la clé de licence :', session.metadata.license_key);
 
         res.json({ id: session.id });
     } catch (error) {
+        console.error('Erreur dans creer-paiement :', error);
         res.status(500).json({ error: error.message });
     }
 });
