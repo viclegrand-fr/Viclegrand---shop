@@ -102,6 +102,9 @@ function appliquerCarteCadeau() {
         })
         .then(response => {
             console.log('Réponse fetch valider-carte-cadeau :', response.status);
+            if (!response.ok) {
+                throw new Error(`Erreur HTTP : ${response.status}`);
+            }
             return response.json();
         })
         .then(data => {
@@ -123,8 +126,23 @@ function appliquerCarteCadeau() {
     }
 }
 
+// Vérifier la disponibilité du serveur
+async function verifierServeur() {
+    try {
+        const response = await fetch('http://localhost:3000/ping', {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        console.log('Réponse ping serveur :', response.status);
+        return response.ok;
+    } catch (error) {
+        console.error('Erreur lors de la vérification du serveur :', error);
+        return false;
+    }
+}
+
 // Payer avec Stripe (carte bancaire ou PayPal)
-function payerAvecStripe() {
+async function payerAvecStripe() {
     console.log('Appel de payerAvecStripe avec panier :', panier, 'et total :', total);
     try {
         const status = document.getElementById('payment-status');
@@ -144,8 +162,17 @@ function payerAvecStripe() {
             status.textContent = 'Email invalide.';
             return;
         }
+
+        // Vérifier si le serveur est accessible
+        const serveurDisponible = await verifierServeur();
+        if (!serveurDisponible) {
+            status.textContent = 'Erreur : le serveur de paiement n’est pas accessible.';
+            console.error('Le serveur Node.js ne répond pas sur http://localhost:3000');
+            return;
+        }
+
         console.log('Envoi de la requête de paiement avec :', { amount: total * 100, currency: 'eur', items: panier, email });
-        fetch('http://localhost:3000/creer-paiement', {
+        const response = await fetch('http://localhost:3000/creer-paiement', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -154,28 +181,21 @@ function payerAvecStripe() {
                 items: panier,
                 email: email
             })
-        })
-        .then(response => {
-            console.log('Réponse fetch creer-paiement :', response.status);
-            if (!response.ok) {
-                throw new Error(`Erreur HTTP : ${response.status}`);
-            }
-            return response.json();
-        })
-        .then(session => {
-            console.log('Session Stripe reçue :', session);
-            return stripe.redirectToCheckout({ sessionId: session.id });
-        })
-        .then(result => {
-            if (result.error) {
-                console.error('Erreur Stripe redirectToCheckout :', result.error);
-                status.textContent = result.error.message;
-            }
-        })
-        .catch(error => {
-            console.error('Erreur lors du paiement Stripe :', error);
-            status.textContent = 'Erreur lors du paiement : ' + error.message;
         });
+
+        console.log('Réponse fetch creer-paiement :', response.status);
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(`Erreur HTTP : ${response.status} - ${errorData.error || 'Erreur inconnue'}`);
+        }
+
+        const session = await response.json();
+        console.log('Session Stripe reçue :', session);
+        const result = await stripe.redirectToCheckout({ sessionId: session.id });
+        if (result.error) {
+            console.error('Erreur Stripe redirectToCheckout :', result.error);
+            status.textContent = result.error.message;
+        }
     } catch (error) {
         console.error('Erreur dans payerAvecStripe :', error);
         const status = document.getElementById('payment-status');
